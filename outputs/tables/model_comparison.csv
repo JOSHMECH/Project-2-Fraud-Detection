@@ -1,0 +1,5 @@
+Model,Precision,Recall,F1,ROC_AUC
+Logistic Regression (baseline),0.053,0.8737,0.1,0.9626
+Random Forest (baseline),0.8222,0.7789,0.8,0.9677
+Logistic Regression (tuned),0.0534,0.8737,0.1007,0.9623
+Random Forest (tuned),0.8222,0.7789,0.8,0.9677

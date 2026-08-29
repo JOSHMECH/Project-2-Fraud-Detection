@@ -1,0 +1,159 @@
+{
+  "shape_raw": [
+    284807,
+    31
+  ],
+  "columns": [
+    "Time",
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5",
+    "V6",
+    "V7",
+    "V8",
+    "V9",
+    "V10",
+    "V11",
+    "V12",
+    "V13",
+    "V14",
+    "V15",
+    "V16",
+    "V17",
+    "V18",
+    "V19",
+    "V20",
+    "V21",
+    "V22",
+    "V23",
+    "V24",
+    "V25",
+    "V26",
+    "V27",
+    "V28",
+    "Amount",
+    "Class"
+  ],
+  "target_balance": {
+    "counts": {
+      "0": 284315,
+      "1": 492
+    },
+    "proportions_pct": {
+      "0": 99.8273,
+      "1": 0.1727
+    },
+    "total_rows": 284807
+  },
+  "data_quality": {
+    "missing_total": 0,
+    "duplicate_rows": 1081
+  },
+  "duplicates_removed": 1081,
+  "train_shape": [
+    226980,
+    30
+  ],
+  "test_shape": [
+    56746,
+    30
+  ],
+  "train_fraud_rate_pct": 0.1665,
+  "test_fraud_rate_pct": 0.1674,
+  "results": {
+    "logistic_regression_baseline": {
+      "precision": 0.053,
+      "recall": 0.8737,
+      "f1": 0.1,
+      "roc_auc": 0.9626,
+      "confusion_matrix": [
+        [
+          55169,
+          1482
+        ],
+        [
+          12,
+          83
+        ]
+      ]
+    },
+    "random_forest_baseline": {
+      "precision": 0.8222,
+      "recall": 0.7789,
+      "f1": 0.8,
+      "roc_auc": 0.9677,
+      "confusion_matrix": [
+        [
+          56635,
+          16
+        ],
+        [
+          21,
+          74
+        ]
+      ]
+    },
+    "logistic_regression_tuned": {
+      "precision": 0.0534,
+      "recall": 0.8737,
+      "f1": 0.1007,
+      "roc_auc": 0.9623,
+      "confusion_matrix": [
+        [
+          55181,
+          1470
+        ],
+        [
+          12,
+          83
+        ]
+      ],
+      "best_params": {
+        "smote__k_neighbors": 5,
+        "classifier__C": 0.01
+      }
+    },
+    "random_forest_tuned": {
+      "precision": 0.8222,
+      "recall": 0.7789,
+      "f1": 0.8,
+      "roc_auc": 0.9677,
+      "confusion_matrix": [
+        [
+          56635,
+          16
+        ],
+        [
+          21,
+          74
+        ]
+      ],
+      "best_params": {
+        "n_estimators": 50,
+        "max_depth": 10,
+        "smote_ratio": 0.3
+      }
+    }
+  },
+  "top_features_rf": {
+    "V14": 0.3195582697184515,
+    "V10": 0.12236099329907808,
+    "V17": 0.11389272541323157,
+    "V3": 0.10714527022641561,
+    "V12": 0.08149783496247287,
+    "V4": 0.06225682279575542,
+    "V16": 0.055223576478224554,
+    "V2": 0.0235444754953752,
+    "V9": 0.022972656306665815,
+    "V7": 0.021873238825336823,
+    "V11": 0.013784870379643007,
+    "V21": 0.00981927157423341,
+    "V27": 0.00723061683048672,
+    "V18": 0.005599575924361872,
+    "V6": 0.0046228808703207514
+  },
+  "final_model_selected": "Random Forest (baseline)",
+  "total_runtime_seconds": 341.4
+}
