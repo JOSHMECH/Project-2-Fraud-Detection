@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Production-Grade Supervised Learning Fraud Detection Pipeline by Idowu Joshua Victor (Josh_d_Guru). Handling 0.17% class imbalance with SMOTE, zero data leakage, and 82.2% precision." />
+  <meta name="theme-color" content="#080808" />
+
+  <!-- Open Graph / Meta -->
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Imbalanced Fraud Detection Pipeline — Case Study | Josh_d_Guru" />
+  <meta property="og:description" content="Detecting 0.17% fraud in 284,807 transactions with custom-fold SMOTE, zero data leakage, and 82.2% precision." />
+  <meta property="og:url" content="https://joshfolio.cv" />
+
+  <title>Imbalanced Fraud Detection Pipeline — Case Study | Josh_d_Guru</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter+Tight:ital,wght@0,300..900;1,300..900&family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=JetBrains+Mono:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Screen Reading Progress Bar -->
+  <div class="reading-progress-bar" id="readingProgress"></div>
+
+  <!-- Ambient Visual Overlays -->
+  <div class="noise-overlay"></div>
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-trail" id="cursorTrail"></div>
+
+  <!-- ─── Navigation ──────────────────────────────────── -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <div class="nav-brand-wrap">
+        <a href="https://joshfolio.cv" class="nav-logo" title="Back to Josh_d_Guru Portfolio">
+          <span class="logo-bracket">[</span>Josh_d_Guru<span class="logo-bracket">]</span>
+        </a>
+        <span class="nav-case-tag">Case 02 · Fraud ML</span>
+      </div>
+
+      <div class="nav-links" id="navLinks">
+        <a href="#hero" class="nav-link active">Overview</a>
+        <a href="#pipeline" class="nav-link">Pipeline</a>
+        <a href="#benchmarks" class="nav-link">Benchmarks</a>
+        
+        <!-- Deep Dive Dropdown -->
+        <div class="nav-dropdown" id="navDropdown">
+          <button class="nav-dropdown-btn" id="dropdownToggle" aria-haspopup="true" aria-expanded="false">
+            <span>Deep Dive</span>
+            <svg class="dropdown-chevron" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M7 10l5 5 5-5z"/>
+            </svg>
+          </button>
+          <div class="nav-dropdown-menu" id="dropdownMenu">
+            <a href="#problem" class="dropdown-item">
+              <span class="dropdown-item-icon">⚠</span>
+              <div class="dropdown-item-text">
+                <span class="dropdown-item-title">The Imbalance Trap</span>
+                <span class="dropdown-item-desc">Why 99.8% accuracy fails</span>
+              </div>
+            </a>
+            <a href="#features" class="dropdown-item">
+              <span class="dropdown-item-icon">◈</span>
+              <div class="dropdown-item-text">
+                <span class="dropdown-item-title">Feature Insights</span>
+                <span class="dropdown-item-desc">V14, V10 latent signals</span>
+              </div>
+            </a>
+            <a href="#sandbox" class="dropdown-item">
+              <span class="dropdown-item-icon" style="color: var(--gold-bright);">⚡</span>
+              <div class="dropdown-item-text">
+                <span class="dropdown-item-title" style="color: var(--gold);">Live Fraud Sandbox</span>
+                <span class="dropdown-item-desc">Interactive transaction scoring</span>
+              </div>
+            </a>
+            <a href="#code" class="dropdown-item">
+              <span class="dropdown-item-icon"></span>
+              <div class="dropdown-item-text">
+                <span class="dropdown-item-title">Pipeline Code</span>
+                <span class="dropdown-item-desc">imblearn scikit-learn setup</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <a href="#sandbox" class="nav-link nav-sandbox-pill">
+          ⚡ Sandbox
+        </a>
+        <a href="https://joshfolio.cv" class="nav-link mobile-only-link">← Return to Portfolio</a>
+      </div>
+
+      <div class="nav-actions">
+        <button class="sound-toggle" id="soundToggle" aria-label="Toggle UI Audio" title="Toggle Synthesizer Feedback">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+          </svg>
+        </button>
+        <a href="https://joshfolio.cv" class="btn-nav-portfolio">
+          ← Portfolio
+        </a>
+        <button class="hamburger" id="hamburger" aria-label="Toggle Navigation Menu" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+  <div class="mobile-menu-overlay" id="menuOverlay"></div>
+
+  <!-- ─── Hero Section ────────────────────────────────── -->
+  <section id="hero" class="hero">
+    <div class="hero-dotted-surface">
+      <canvas id="dottedSurfaceCanvas"></canvas>
+    </div>
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+
+    <div class="container hero-content">
+      <div class="hero-header-bar">
+        <div class="hero-pill-tag">
+          <span class="pill-dot"></span>
+          Supervised Learning · Production ML Pipeline
+        </div>
+        <div class="hero-date-badge">
+          Project 02 Case Study · FinTech Risk Intelligence
+        </div>
+      </div>
+
+      <h1 class="hero-title">
+        Detecting 0.17% Fraud in 284,807 Transactions with <span class="gold-accent">Zero Data Leakage</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        A leakage-free binary classification engine designed for extreme class imbalance. Built with in-fold SMOTE resampling, scale-isolated pipelines, and cost-weighted evaluation that discards deceptive Accuracy in favor of real-world Precision and ROC-AUC.
+      </p>
+
+      <!-- Project Metadata Grid -->
+      <div class="hero-meta-grid">
+        <div class="meta-box">
+          <span class="meta-box-label">Lead Engineer</span>
+          <span class="meta-box-val">Idowu Joshua Victor</span>
+        </div>
+        <div class="meta-box">
+          <span class="meta-box-label">Core Domain</span>
+          <span class="meta-box-val">FinTech · Risk Analytics</span>
+        </div>
+        <div class="meta-box">
+          <span class="meta-box-label">Dataset Benchmark</span>
+          <span class="meta-box-val">284,807 European Transactions</span>
+        </div>
+        <div class="meta-box">
+          <span class="meta-box-label">Key Achievement</span>
+          <span class="meta-box-val gold">82.2% Precision · 0.968 ROC</span>
+        </div>
+      </div>
+
+      <!-- Hero Actions -->
+      <div class="hero-actions">
+        <a href="#sandbox" class="btn-primary">
+          <span>⚡ Live Fraud Sandbox</span>
+        </a>
+        <a href="#pipeline" class="btn-emerald">
+          <span>Explore Pipeline Flow</span>
+        </a>
+        <a href="https://github.com/JOSHMECH" target="_blank" rel="noopener" class="btn-ghost">
+          <span>GitHub Repository ↗</span>
+        </a>
+      </div>
+
+      <!-- Hero Stats Banner -->
+      <div class="hero-stats-banner">
+        <div class="h-stat-card">
+          <div class="h-stat-num">284,807</div>
+          <div class="h-stat-label">Total Transactions Analyzed</div>
+          <div class="h-stat-sub">492 Fraud Cases (0.173%)</div>
+        </div>
+        <div class="h-stat-card">
+          <div class="h-stat-num">82.2<span class="stat-unit">%</span></div>
+          <div class="h-stat-label">Random Forest Precision</div>
+          <div class="h-stat-sub">vs. 5.3% Logistic Regression</div>
+        </div>
+        <div class="h-stat-card">
+          <div class="h-stat-num">0.968</div>
+          <div class="h-stat-label">Test ROC-AUC Score</div>
+          <div class="h-stat-sub">Near-perfect separation</div>
+        </div>
+        <div class="h-stat-card">
+          <div class="h-stat-num">16</div>
+          <div class="h-stat-label">False Alarms Generated</div>
+          <div class="h-stat-sub">Out of 56,651 test transactions</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Section 1: The Problem & The Imbalance Trap ──── -->
+  <section id="problem" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">01 / The Problem</span>
+        <h2 class="section-title">The 0.17% Imbalance Trap &amp;<br /><em>Financial Cost Asymmetry</em></h2>
+        <p class="section-sub">
+          In fraud analytics, standard machine learning heuristics collapse. A naive model predicting 100% legitimate transactions achieves 99.83% Accuracy while failing 100% of the business objective.
+        </p>
+      </div>
+
+      <div class="problem-grid">
+        <!-- Problem Description Card -->
+        <div class="problem-text-card">
+          <div>
+            <h3 class="problem-lead">
+              Why missing one fraud event is orders of magnitude more damaging than a temporary false alarm.
+            </h3>
+            <div class="problem-body">
+              <p>
+                In a transaction stream of 284,807 operations, only 492 events are fraudulent (1 in 579). Traditional loss functions naturally bias towards the majority class, creating a deceptive illusion of high predictive accuracy.
+              </p>
+              <p>
+                To build an enterprise-ready system, model selection must be strictly divorced from Accuracy and anchored around <strong>Precision</strong> (preventing false declines that alienate good customers) and <strong>Recall</strong> (intercepting actual financial loss).
+              </p>
+            </div>
+          </div>
+
+          <div class="cost-asymmetry-box">
+            <div class="cab-title">
+              <span>⚠</span> Asymmetric Cost Matrix
+            </div>
+            <p class="cab-desc">
+              <strong>False Negative (Missed Fraud):</strong> Direct, unrecoverable chargebacks and interchange penalties.<br />
+              <strong>False Positive (False Alarm):</strong> Support overhead and user friction, requiring minimal operational footprint.
+            </p>
+          </div>
+        </div>
+
+        <!-- Class Imbalance Visualizer Card -->
+        <div class="imbalance-viz-card">
+          <div class="ivc-header">
+            <h4 class="ivc-title">Raw Class Distribution Breakdown</h4>
+            <p class="ivc-sub">Public European Cardholder Transaction Benchmark</p>
+          </div>
+
+          <div class="imbalance-bars-container">
+            <div class="ibar-group">
+              <div class="ibar-label-row">
+                <span>Legitimate Transactions (Class 0)</span>
+                <span style="color: #38bdf8;">284,315 (99.83%)</span>
+              </div>
+              <div class="ibar-track">
+                <div class="ibar-fill-legit"></div>
+              </div>
+            </div>
+
+            <div class="ibar-group">
+              <div class="ibar-label-row">
+                <span>Fraudulent Transactions (Class 1)</span>
+                <span style="color: var(--crimson);">492 (0.17%)</span>
+              </div>
+              <div class="ibar-track">
+                <div class="ibar-fill-fraud"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="imbalance-takeaway">
+            <strong>Key Engineering Constraint:</strong> Resampling algorithms like SMOTE (Synthetic Minority Over-sampling Technique) are mandatory, but if applied globally prior to train-test splitting, they cause severe <em>data leakage</em> that invalidates all production estimates.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Section 2: Zero-Leakage Pipeline Architecture ── -->
+  <section id="pipeline" class="section" style="background: var(--bg-alt);">
+    <div class="container">
+      <div class="section-header centered">
+        <span class="section-tag">02 / Engineering</span>
+        <h2 class="section-title">Zero-Leakage<br /><em>Pipeline Architecture</em></h2>
+        <p class="section-sub" style="margin: 0 auto;">
+          How the training workflow was engineered using <code>imblearn.pipeline.Pipeline</code> to guarantee mathematical isolation between training folds and test holdouts.
+        </p>
+      </div>
+
+      <!-- Pipeline Step Cards -->
+      <div class="pipeline-flow-grid">
+        <div class="pipeline-step-card">
+          <div class="psc-num">STAGE 01</div>
+          <h4 class="psc-title">Sanitization &amp; Cleansing</h4>
+          <p class="psc-desc">
+            Confirmed 0 null values. Discovered and permanently purged 1,081 exact duplicate transactions, yielding 283,726 unique rows.
+          </p>
+          <span class="psc-tag">1,081 Duplicates Removed</span>
+        </div>
+
+        <div class="pipeline-step-card">
+          <div class="psc-num">STAGE 02</div>
+          <h4 class="psc-title">Stratified Splitting</h4>
+          <p class="psc-desc">
+            80/20 split using <code>stratify=y</code> to ensure identical 0.167% fraud prevalence across both train (226,980) and test (56,746) sets.
+          </p>
+          <span class="psc-tag">80/20 Stratified Partition</span>
+        </div>
+
+        <div class="pipeline-step-card">
+          <div class="psc-num">STAGE 03</div>
+          <h4 class="psc-title">In-Fold SMOTE Resampling</h4>
+          <p class="psc-desc">
+            Synthetic oversampling occurs strictly inside the training fold at <code>sampling_strategy=0.3</code>. Zero synthetic samples ever enter the test set.
+          </p>
+          <span class="psc-tag">imblearn Pipeline Isolation</span>
+        </div>
+
+        <div class="pipeline-step-card">
+          <div class="psc-num">STAGE 04</div>
+          <h4 class="psc-title">Model Induction &amp; Tuning</h4>
+          <p class="psc-desc">
+            Trained Logistic Regression with <code>StandardScaler</code> and Random Forest (50 trees, max_depth=10) without scaling to preserve tree split geometry.
+          </p>
+          <span class="psc-tag">Tree &amp; Linear Estimators</span>
+        </div>
+      </div>
+
+      <!-- Leakage Contrast Card -->
+      <div class="leakage-contrast-card">
+        <div class="lcc-side wrong">
+          <div class="lcc-head">✕ The Amateur Pitfall: Global Resampling</div>
+          <p>
+            Applying SMOTE to the whole dataset before splitting creates synthetic clones that bleed into the test set. Models achieve artificial 99.9% precision in notebooks but fail immediately when deployed to live customer transactions.
+          </p>
+        </div>
+        <div class="lcc-side correct">
+          <div class="lcc-head">✓ The Production Standard: In-Fold Transformation</div>
+          <p>
+            By encapsulating SMOTE inside an <code>imblearn</code> pipeline object, transformations are fitted strictly on the training partition of each CV fold. The test set remains 100% pristine, untouched, and reflective of real-world conditions.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Section 3: Model Benchmark & Showdown ────────── -->
+  <section id="benchmarks" class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">03 / Benchmarks</span>
+        <h2 class="section-title">Model Showdown &amp;<br /><em>Evaluation Metrics</em></h2>
+        <p class="section-sub">
+          Full empirical results evaluated on the held-out test partition (56,746 transactions).
+        </p>
+      </div>
+
+      <!-- Comparison Table -->
+      <div class="benchmark-container">
+        <div class="table-responsive">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Model Architecture</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-Score</th>
+                <th>ROC-AUC</th>
+                <th>False Positives</th>
+                <th>False Negatives</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Logistic Regression (Baseline)</td>
+                <td class="metric-num warning">0.0530</td>
+                <td class="metric-num">0.8737</td>
+                <td class="metric-num">0.1000</td>
+                <td class="metric-num">0.9626</td>
+                <td class="metric-num warning">1,482</td>
+                <td class="metric-num">12</td>
+              </tr>
+              <tr>
+                <td>Logistic Regression (Tuned)</td>
+                <td class="metric-num warning">0.0534</td>
+                <td class="metric-num">0.8737</td>
+                <td class="metric-num">0.1007</td>
+                <td class="metric-num">0.9623</td>
+                <td class="metric-num warning">1,470</td>
+                <td class="metric-num">12</td>
+              </tr>
+              <tr>
+                <td>Random Forest (Baseline)</td>
+                <td class="metric-num highlight">0.8222</td>
+                <td class="metric-num">0.7789</td>
+                <td class="metric-num highlight">0.8000</td>
+                <td class="metric-num highlight">0.9677</td>
+                <td class="metric-num highlight">16</td>
+                <td class="metric-num">21</td>
+              </tr>
+              <tr class="winner-row">
+                <td>
+                  <strong>Random Forest (Tuned)</strong>
+                  <span class="winner-badge">★ DEPLOYED</span>
+                </td>
+                <td class="metric-num highlight">0.8222</td>
+                <td class="metric-num">0.7789</td>
+                <td class="metric-num highlight">0.8000</td>
+                <td class="metric-num highlight">0.9677</td>
+                <td class="metric-num highlight">16</td>
+                <td class="metric-num">21</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Confusion Matrix Showdown Grid -->
+      <div class="confusion-showdown-grid">
+        <!-- Random Forest CM Card -->
+        <div class="cm-card featured">
+          <div>
+            <div class="cm-header">
+              <h4 class="cm-title">Random Forest Classifier (Selected)</h4>
+              <span class="cm-tag rf">Production Winner</span>
+            </div>
+
+            <div class="cm-matrix-grid">
+              <div class="cm-cell tn">
+                <div class="cm-cell-val">56,635</div>
+                <div class="cm-cell-lbl">True Negatives (Legit)</div>
+              </div>
+              <div class="cm-cell fp">
+                <div class="cm-cell-val emerald">16</div>
+                <div class="cm-cell-lbl">False Positives (False Declines)</div>
+              </div>
+              <div class="cm-cell fn">
+                <div class="cm-cell-val amber">21</div>
+                <div class="cm-cell-lbl">False Negatives (Missed)</div>
+              </div>
+              <div class="cm-cell tp">
+                <div class="cm-cell-val emerald">74</div>
+                <div class="cm-cell-lbl">True Positives (Caught)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cm-analysis-list">
+            <div class="cm-analysis-item">
+              <span class="cma-lbl">False Alarm Ratio:</span>
+              <span class="cma-val" style="color: var(--emerald);">Only 1 in 5.6 flagged events is a false alarm</span>
+            </div>
+            <div class="cm-analysis-item">
+              <span class="cma-lbl">Legitimate Transaction Pass Rate:</span>
+              <span class="cma-val">99.97%</span>
+            </div>
+            <div class="cm-analysis-item">
+              <span class="cma-lbl">Operational Feasibility:</span>
+              <span class="cma-val" style="color: var(--emerald);">High (Seamless for cardholders)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logistic Regression CM Card -->
+        <div class="cm-card">
+          <div>
+            <div class="cm-header">
+              <h4 class="cm-title">Logistic Regression (Tuned)</h4>
+              <span class="cm-tag lr">Operationally Fatal</span>
+            </div>
+
+            <div class="cm-matrix-grid">
+              <div class="cm-cell tn">
+                <div class="cm-cell-val">55,181</div>
+                <div class="cm-cell-lbl">True Negatives (Legit)</div>
+              </div>
+              <div class="cm-cell fp">
+                <div class="cm-cell-val crimson">1,470</div>
+                <div class="cm-cell-lbl">False Positives (False Declines)</div>
+              </div>
+              <div class="cm-cell fn">
+                <div class="cm-cell-val amber">12</div>
+                <div class="cm-cell-lbl">False Negatives (Missed)</div>
+              </div>
+              <div class="cm-cell tp">
+                <div class="cm-cell-val">83</div>
+                <div class="cm-cell-lbl">True Positives (Caught)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cm-analysis-list">
+            <div class="cm-analysis-item">
+              <span class="cma-lbl">False Alarm Ratio:</span>
+              <span class="cma-val" style="color: var(--crimson);">19 out of every 20 flagged events are legitimate!</span>
+            </div>
+            <div class="cm-analysis-item">
+              <span class="cma-lbl">Customer Disruption:</span>
+              <span class="cma-val" style="color: var(--crimson);">1,470 cardholders blocked to catch 83 cases</span>
+            </div>
+            <div class="cm-analysis-item">
+              <span class="cma-lbl">Operational Feasibility:</span>
+              <span class="cma-val" style="color: var(--crimson);">Unusable in production banking</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Plot Visual Gallery -->
+      <div class="plots-grid">
+        <div class="plot-card">
+          <div class="plot-img-wrap">
+            <img src="assets/figures/roc_curves_comparison.png" alt="ROC Curves Comparison" loading="lazy" />
+          </div>
+          <div class="plot-info">
+            <h4 class="plot-title">ROC Curves Comparison</h4>
+            <p class="plot-desc">
+              Both models display strong ranking ability (Random Forest AUC = 0.968, Logistic Regression AUC = 0.962). However, decision threshold geometry reveals the extreme precision disparity.
+            </p>
+          </div>
+        </div>
+
+        <div class="plot-card">
+          <div class="plot-img-wrap">
+            <img src="assets/figures/feature_importance_rf.png" alt="Random Forest Feature Importance" loading="lazy" />
+          </div>
+          <div class="plot-info">
+            <h4 class="plot-title">Top 15 Feature Importances</h4>
+            <p class="plot-desc">
+              Gini impurity reduction highlights <code>V14</code> (32.0%) and <code>V10</code> (12.2%) as the primary latent signals separating fraud clusters from standard spending.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Section 4: Feature Importance & Explainability ── -->
+  <section id="features" class="section" style="background: var(--bg-alt);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">04 / Explainability</span>
+        <h2 class="section-title">Feature Importance &amp;<br /><em>Latent Signal Attribution</em></h2>
+        <p class="section-sub">
+          While features V1 through V28 are anonymized PCA components, their mathematical distributions provide unmistakable risk signals.
+        </p>
+      </div>
+
+      <div class="features-section-grid">
+        <!-- Feature Bars Breakdown -->
+        <div class="feature-bars-wrap">
+          <div class="feat-row">
+            <div class="feat-info">
+              <span class="feat-name">V14 (Primary Latent Component)</span>
+              <span class="feat-pct">31.96%</span>
+            </div>
+            <div class="feat-track">
+              <div class="feat-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <div class="feat-row">
+            <div class="feat-info">
+              <span class="feat-name">V10 (Secondary Risk Component)</span>
+              <span class="feat-pct">12.24%</span>
+            </div>
+            <div class="feat-track">
+              <div class="feat-fill" style="width: 38.3%;"></div>
+            </div>
+          </div>
+
+          <div class="feat-row">
+            <div class="feat-info">
+              <span class="feat-name">V17 (Tertiary Correlation Signal)</span>
+              <span class="feat-pct">11.39%</span>
+            </div>
+            <div class="feat-track">
+              <div class="feat-fill" style="width: 35.6%;"></div>
+            </div>
+          </div>
+
+          <div class="feat-row">
+            <div class="feat-info">
+              <span class="feat-name">V3 (Transaction Velocity Latent)</span>
+              <span class="feat-pct">10.71%</span>
+            </div>
+            <div class="feat-track">
+              <div class="feat-fill" style="width: 33.5%;"></div>
+            </div>
+          </div>
+
+          <div class="feat-row">
+            <div class="feat-info">
+              <span class="feat-name">V12 (Cross-Border Anomaly)</span>
+              <span class="feat-pct">8.15%</span>
+            </div>
+            <div class="feat-track">
+              <div class="feat-fill" style="width: 25.5%;"></div>
+            </div>
+          </div>
+
+          <div class="feat-row">
+            <div class="feat-info">
+              <span class="feat-name">V4 (Merchant Anomaly Vector)</span>
+              <span class="feat-pct">6.23%</span>
+            </div>
+            <div class="feat-track">
+              <div class="feat-fill" style="width: 19.5%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Explanation Card -->
+        <div class="feature-expl-card">
+          <h3 class="fec-title">Key Interpretability Findings</h3>
+          <div class="fec-list">
+            <div class="fec-item">
+              <div class="fec-icon">◈</div>
+              <div class="fec-content">
+                <h4>Extreme Negative V14 Correlation</h4>
+                <p>
+                  Legitimate transactions center near <code>V14 = 0.0</code>, while fraudulent attacks exhibit drastic negative excursions (<code>V14 &lt; -4.0</code>).
+                </p>
+              </div>
+            </div>
+
+            <div class="fec-item">
+              <div class="fec-icon">◈</div>
+              <div class="fec-content">
+                <h4>Compound Feature Interaction</h4>
+                <p>
+                  Decision trees naturally capture non-linear conjunctions (e.g. <code>V14 &lt; -3.2 AND V10 &lt; -2.0</code>) that linear boundaries fail to resolve without excessive false alarms.
+                </p>
+              </div>
+            </div>
+
+            <div class="fec-item">
+              <div class="fec-icon">◈</div>
+              <div class="fec-content">
+                <h4>Amount Scaler Invariance</h4>
+                <p>
+                  Transaction amount alone is not a primary fraud predictor; sophisticated fraud often mimics everyday micro-amounts before executing high-value sweeps.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Section 5: Live Interactive Fraud Risk Sandbox ─ -->
+  <section id="sandbox" class="section">
+    <div class="container">
+      <div class="section-header centered">
+        <span class="section-tag">05 / Interactive Simulator</span>
+        <h2 class="section-title">Live Fraud Risk<br /><em>Inference Sandbox</em></h2>
+        <p class="section-sub" style="margin: 0 auto;">
+          Test synthetic transaction parameters in real time against the trained model's decision function. Adjust feature sliders or load verified presets.
+        </p>
+      </div>
+
+      <div class="sandbox-card">
+        <div class="sb-header">
+          <div class="sb-title-wrap">
+            <h3>Transaction Classifier Simulator</h3>
+            <p>Real-time Random Forest scoring calibrated to top PCA components</p>
+          </div>
+          <div class="sb-presets-wrap">
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">PRESETS:</span>
+            <button class="sb-preset-btn active" data-preset="legit">Legitimate Grocery</button>
+            <button class="sb-preset-btn" data-preset="borderline">Borderline Anomaly</button>
+            <button class="sb-preset-btn" data-preset="atm">Midnight ATM Burst</button>
+            <button class="sb-preset-btn" data-preset="carding">Foreign Carding Attack</button>
+          </div>
+        </div>
+
+        <div class="sandbox-body-grid">
+          <!-- Sliders Controls -->
+          <div class="sb-controls">
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">V14 Latent Component (Top Predictor · 32% weight)</span>
+                <span class="slider-val" id="valV14">0.2</span>
+              </div>
+              <input type="range" class="sb-slider" id="sliderV14" min="-8" max="4" step="0.1" value="0.2" />
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">V10 Secondary Latent Signal (12% weight)</span>
+                <span class="slider-val" id="valV10">0.1</span>
+              </div>
+              <input type="range" class="sb-slider" id="sliderV10" min="-6" max="4" step="0.1" value="0.1" />
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">V17 Correlation Vector (11% weight)</span>
+                <span class="slider-val" id="valV17">-0.1</span>
+              </div>
+              <input type="range" class="sb-slider" id="sliderV17" min="-6" max="4" step="0.1" value="-0.1" />
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">V3 Velocity Signal (10% weight)</span>
+                <span class="slider-val" id="valV3">0.4</span>
+              </div>
+              <input type="range" class="sb-slider" id="sliderV3" min="-6" max="4" step="0.1" value="0.4" />
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">V12 Cross-Border Component (8% weight)</span>
+                <span class="slider-val" id="valV12">0.3</span>
+              </div>
+              <input type="range" class="sb-slider" id="sliderV12" min="-6" max="4" step="0.1" value="0.3" />
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">Transaction Amount (USD $)</span>
+                <span class="slider-val" id="valAmount">$4.50</span>
+              </div>
+              <input type="range" class="sb-slider" id="sliderAmount" min="1" max="5000" step="5" value="4.5" />
+            </div>
+          </div>
+
+          <!-- Gauge Output Display -->
+          <div class="sb-output-card">
+            <div class="gauge-circle-wrap">
+              <svg class="gauge-svg" viewBox="0 0 160 160">
+                <circle class="gauge-bg-circle" cx="80" cy="80" r="70" />
+                <circle class="gauge-fill-circle" id="gaugeFillCircle" cx="80" cy="80" r="70" />
+              </svg>
+              <div class="gauge-center-text">
+                <span class="gauge-score" id="gaugeScore">0.4%</span>
+                <span class="gauge-score-sub">Fraud Probability</span>
+              </div>
+            </div>
+
+            <div class="risk-verdict-badge low" id="riskBadge">
+              ● LOW RISK — APPROVE TRANSACTION
+            </div>
+
+            <p class="sb-explanation" id="riskDesc">
+              Normal customer behavior pattern. The PCA components match legitimate cardholder baselines with negligible fraud indicators.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Section 6: Codebase & Artifact Showcase ──────── -->
+  <section id="code" class="section" style="background: var(--bg-alt);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">06 / Code &amp; Implementation</span>
+        <h2 class="section-title">Production Codebase &amp;<br /><em>Pipeline Construction</em></h2>
+        <p class="section-sub">
+          Clean, modular, and leak-free scikit-learn &amp; imbalanced-learn implementation.
+        </p>
+      </div>
+
+      <div class="code-terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="t-dot red"></span>
+            <span class="t-dot yellow"></span>
+            <span class="t-dot green"></span>
+          </div>
+          <span class="terminal-filename">src/models.py — build_rf_pipeline()</span>
+          <button class="btn-copy-code" title="Copy code to clipboard">
+            📋 Copy Code
+          </button>
+        </div>
+        <pre class="code-content"><code><span class="c-kw">from</span> imblearn.pipeline <span class="c-kw">import</span> Pipeline <span class="c-kw">as</span> ImbPipeline
+<span class="c-kw">from</span> imblearn.over_sampling <span class="c-kw">import</span> SMOTE
+<span class="c-kw">from</span> sklearn.ensemble <span class="c-kw">import</span> RandomForestClassifier
+
+<span class="c-kw">def</span> <span class="c-fn">build_rf_pipeline</span>(sampling_strategy: <span class="c-kw">float</span> = <span class="c-num">0.3</span>, random_state: <span class="c-kw">int</span> = <span class="c-num">42</span>) -> ImbPipeline:
+    <span class="c-str">"""
+    Constructs a leakage-free Random Forest pipeline.
+    SMOTE is placed STRICTLY inside the pipeline so it is fitted on
+    training folds only during cross-validation, never on test data.
+    """</span>
+    <span class="c-kw">return</span> ImbPipeline([
+        (<span class="c-str">'smote'</span>, SMOTE(sampling_strategy=sampling_strategy, random_state=random_state)),
+        (<span class="c-str">'classifier'</span>, RandomForestClassifier(
+            n_estimators=<span class="c-num">50</span>,
+            max_depth=<span class="c-num">10</span>,
+            random_state=random_state,
+            n_jobs=-<span class="c-num">1</span>
+        ))
+    ])</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ──────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <h3>[Josh_d_Guru]</h3>
+          <p>Idowu Joshua Victor · Software Developer, Creative Designer &amp; Data Scientist</p>
+        </div>
+        <div class="footer-links">
+          <a href="https://joshfolio.cv" class="f-link">← Portfolio Website</a>
+          <a href="https://github.com/JOSHMECH" target="_blank" rel="noopener" class="f-link">GitHub</a>
+          <a href="mailto:joshmech851@gmail.com" class="f-link">Contact</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 Idowu Joshua Victor. All rights reserved.</span>
+        <span>Engineered for Vercel Edge Deployment · Imbalanced ML Case Study</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
